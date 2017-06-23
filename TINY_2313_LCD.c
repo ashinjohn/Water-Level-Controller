@@ -20,16 +20,20 @@ void printlcd(const char *CPtr);
 #define high (PIND & 0x10) // input from high probe
 #define low (PIND & 0x20) // input from low probe
 
-#define pump_on (PORTD |= _BV(PORTD0))   //switch ON PUMP
-#define pump_off (PORTD &= ~_BV(PORTD0))  //switch OFF PUMP
+#define pump_on (PORTD |= _BV(PORTD1))   //switch ON PUMP
+#define pump_off (PORTD &= ~_BV(PORTD1))  //switch OFF PUMP
 
-#define buzz_on (PORTD |= _BV(PORTD1))   //switch ON Buzzer
-#define buzz_off (PORTD &= ~_BV(PORTD1))  //switch OFF Buzzer
+#define buzz_on (PORTD |= _BV(PORTD0))   //switch ON Buzzer
+#define buzz_off (PORTD &= ~_BV(PORTD0))  //switch OFF Buzzer
 
 
 
 int main (void)
 {
+	
+
+	
+	
 int i;
 
 DDRB = 0xFF; // for LCD module
@@ -47,8 +51,13 @@ lcd_cmd(0x80);  // first row first location
 printlcd("PUMP CONTROLLER");
 lcd_cmd(0xC0); 
 printlcd("SYSTEM READY");
+
 buzz_on;
-_delay_ms(300);
+_delay_ms(50);
+buzz_off;
+_delay_ms(50);
+buzz_on;
+_delay_ms(50);
 buzz_off;
 
 int error=0;
@@ -57,24 +66,46 @@ int high_count = 0;
 int filling_tank = 0;
 
 
+
 while (1)
 {
+
 
 	if (safety==0){
 		pump_off;
 		error=1;
 		filling_tank=0;
+		
+		lcd_cmd(0x33);  // one line
+		lcd_cmd(0x32);
+		lcd_cmd(0x28);  // 4 bit mode
+		lcd_cmd(0x06);  // auto addressing
+		lcd_cmd(0x0C);  // cursor off
+		lcd_cmd(0x01);  // clear display		
+		
 		lcd_cmd(0x80);  
 		printlcd("PROBE ERROR     ");
+		lcd_cmd(0xC0);
+		printlcd("PUMP OFF     ");
+	
 	}
 	else if (high==0){
 		high_count++;
-		_delay_ms(100);
+		_delay_ms(10);
 		
-		if (high_count>10){
+		if (high_count>5){
 			high_count = 0;
 			pump_off;
-	
+			
+			lcd_cmd(0x33);  // one line
+			lcd_cmd(0x32);
+			lcd_cmd(0x28);  // 4 bit mode
+			lcd_cmd(0x06);  // auto addressing
+			lcd_cmd(0x0C);  // cursor off
+			
+			lcd_cmd(0x01);  // clear display
+			lcd_cmd(0x80);  // first row first location
+			printlcd("PUMP CONTROLLER");
 			lcd_cmd(0xC0);
 			printlcd("TANK FULL     ");
 			_delay_ms(300);
@@ -83,30 +114,49 @@ while (1)
 			filling_tank=0;
 			buzz_off;
 		}
-	}		
+	}	
+	
+	else if (high==1){
+			high_count=0;
+		}
+	
+		
 	else if (low==0){
 		low_count++;
-		_delay_ms(100);
+		_delay_ms(10);
 		
-		if (low_count>10){
+		if (low_count>5){
 			pump_on;
 			low_count=0;
 			filling_tank=1;
+			
+			lcd_cmd(0x33);  // one line
+			lcd_cmd(0x32);
+			lcd_cmd(0x28);  // 4 bit mode
+			lcd_cmd(0x06);  // auto addressing
+			lcd_cmd(0x0C);  // cursor off
+			
+			lcd_cmd(0x01);  // clear display
+			lcd_cmd(0x80);  // first row first location
+			printlcd("PUMP CONTROLLER");
 			lcd_cmd(0xC0);
 			printlcd("TANK EMPTY     ");
 			_delay_ms(300);
 			lcd_cmd(0xC0);
 			printlcd("PUMP ON      ");
-			_delay_ms(300);
-			lcd_cmd(0xC0);	
 		}
 	}
 
+	else if (low==1){
+		low_count=0;
+	}
+	
 	else if(filling_tank==1){
+
 		lcd_cmd(0xC0);
 		printlcd("FILLING TANK     ");
 		buzz_on;
-		_delay_ms(100);
+		_delay_ms(20);
 		buzz_off;
 	}
 
